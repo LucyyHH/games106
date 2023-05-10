@@ -234,3 +234,5 @@ data/textures/**
 data/README_asset_pack.md
 data/font*.*
 data/roboto*.*
+cmake-build-debug/**
+/data/Robot-Medium-license.txt
