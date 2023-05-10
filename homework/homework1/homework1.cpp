@@ -433,7 +433,7 @@ public:
         node->index = nodeIndex;
         node->skin = inputNode.skin;
 
-		/*// Get the local node matrix
+		// Get the local node matrix
 		// It's either made up from translation, rotation, scale or a 4x4 matrix
 		if (inputNode.translation.size() == 3) {
 			node->matrix = glm::translate(node->matrix, glm::vec3(glm::make_vec3(inputNode.translation.data())));
@@ -447,9 +447,9 @@ public:
 		}
 		if (inputNode.matrix.size() == 16) {
 			node->matrix = glm::make_mat4x4(inputNode.matrix.data());
-		};*/
+		};
 
-        // Get the local node matrix
+        /*// Get the local node matrix
         // It's either made up from translation, rotation, scale or a 4x4 matrix
         if (inputNode.translation.size() == 3)
         {
@@ -467,7 +467,7 @@ public:
         if (inputNode.matrix.size() == 16)
         {
             node->matrix = glm::make_mat4x4(inputNode.matrix.data());
-        };
+        };*/
 
 		// Load node's children
 		if (inputNode.children.size() > 0) {
@@ -977,8 +977,8 @@ public:
 
 	void loadAssets()
 	{
-		//loadglTFFile(getAssetPath() + "buster_drone/busterDrone.gltf");
-        loadglTFFile(getAssetPath() + "models/CesiumMan/glTF/CesiumMan.gltf");
+		loadglTFFile(getAssetPath() + "buster_drone/busterDrone.gltf");
+        //loadglTFFile(getAssetPath() + "models/CesiumMan/glTF/CesiumMan.gltf");
 	}
 
 	void setupDescriptors()
