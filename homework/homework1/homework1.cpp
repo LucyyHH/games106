@@ -95,7 +95,7 @@ public:
 		}
         glm::mat4 getLocalMatrix()
         {
-            return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) * matrix;
+            return glm::translate(glm::mat4(1.0f), translation) * glm::mat4(rotation) * glm::scale(glm::mat4(1.0f), scale) /** matrix*/ ;
         }
 	};
 
@@ -433,7 +433,7 @@ public:
         node->index = nodeIndex;
         node->skin = inputNode.skin;
 
-		// Get the local node matrix
+		/*// Get the local node matrix
 		// It's either made up from translation, rotation, scale or a 4x4 matrix
 		if (inputNode.translation.size() == 3) {
 			node->matrix = glm::translate(node->matrix, glm::vec3(glm::make_vec3(inputNode.translation.data())));
@@ -447,9 +447,9 @@ public:
 		}
 		if (inputNode.matrix.size() == 16) {
 			node->matrix = glm::make_mat4x4(inputNode.matrix.data());
-		};
+		};*/
 
-        /*// Get the local node matrix
+        // Get the local node matrix
         // It's either made up from translation, rotation, scale or a 4x4 matrix
         if (inputNode.translation.size() == 3)
         {
@@ -467,7 +467,7 @@ public:
         if (inputNode.matrix.size() == 16)
         {
             node->matrix = glm::make_mat4x4(inputNode.matrix.data());
-        };*/
+        };
 
 		// Load node's children
 		if (inputNode.children.size() > 0) {
@@ -630,6 +630,8 @@ public:
             // Update ssbo
             skin.ssbo.copyTo(jointMatrices.data(), jointMatrices.size() * sizeof(glm::mat4));
         }
+
+        node->matrix = node->getLocalMatrix();
 
         for (auto &child : node->children)
         {
@@ -1146,6 +1148,7 @@ public:
         if (!paused)
         {
             glTFModel.updateAnimation(frameTimer);
+            buildCommandBuffers();
         }
 	}
 
