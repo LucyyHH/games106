@@ -13,6 +13,7 @@ layout (set = 0, binding = 0) uniform UBOScene
 	mat4 view;
 	vec4 lightPos;
 	vec4 viewPos;
+	vec3 camPos;
 } uboScene;
 
 layout(push_constant) uniform PushConsts {
@@ -28,10 +29,11 @@ layout (location = 1) out vec3 outColor;
 layout (location = 2) out vec2 outUV;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec3 outLightVec;
+layout (location = 5) out vec3 outWorldPos;
 
 void main() 
 {
-	outNormal = inNormal;
+	outNormal = mat3(primitive.model) * inNormal;
 	outColor = inColor;
 	outUV = inUV;
 
@@ -41,6 +43,7 @@ void main()
 		 inJointWeights.z * jointMatrices[int(inJointIndices.z)] +
 		 inJointWeights.w * jointMatrices[int(inJointIndices.w)]);
 
+	outWorldPos = (primitive.model * vec4(inPos.xyz, 1.0)).xyz;
 	gl_Position = uboScene.projection * uboScene.view * primitive.model /*** skinMat*/ * vec4(inPos.xyz, 1.0);
 	
 	vec4 pos = uboScene.view * vec4(inPos, 1.0);
