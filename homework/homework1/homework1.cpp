@@ -44,6 +44,7 @@ public:
 		glm::vec3 normal;
 		glm::vec2 uv;
 		glm::vec3 color;
+        glm::vec4 tangent;
         glm::vec4 jointIndices;
         glm::vec4 jointWeights;
 	};
@@ -506,6 +507,7 @@ public:
                     const float* texCoordsBuffer = nullptr;
                     const uint16_t* jointIndicesBuffer = nullptr;
                     const float* jointWeightsBuffer = nullptr;
+                    const float* tangentsBuffer = nullptr;
 					size_t vertexCount = 0;
 
 					// Get buffer data for vertex positions
@@ -542,6 +544,12 @@ public:
                         const tinygltf::BufferView &view     = input.bufferViews[accessor.bufferView];
                         jointWeightsBuffer                   = reinterpret_cast<const float *>(&(input.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                     }
+                    // POI: This sample uses normal mapping, so we also need to load the tangents from the glTF file
+                    if (glTFPrimitive.attributes.find("TANGENT") != glTFPrimitive.attributes.end()) {
+                        const tinygltf::Accessor& accessor = input.accessors[glTFPrimitive.attributes.find("TANGENT")->second];
+                        const tinygltf::BufferView& view = input.bufferViews[accessor.bufferView];
+                        tangentsBuffer = reinterpret_cast<const float*>(&(input.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
+                    }
 
                     hasSkin = (jointIndicesBuffer && jointWeightsBuffer);
 					// Append data to model's vertex buffer
@@ -553,6 +561,7 @@ public:
 						vert.color = glm::vec3(1.0f);
                         vert.jointIndices = hasSkin ? glm::vec4(glm::make_vec4(&jointIndicesBuffer[v * 4])) : glm::vec4(0.0f);
                         vert.jointWeights = hasSkin ? glm::make_vec4(&jointWeightsBuffer[v * 4]) : glm::vec4(0.0f);
+                        vert.tangent = glm::normalize(glm::vec4(tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f)));
 						vertexBuffer.push_back(vert);
 					}
 				}
@@ -1127,9 +1136,10 @@ public:
 			vks::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VulkanglTFModel::Vertex, normal)),// Location 1: Normal
 			vks::initializers::vertexInputAttributeDescription(0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VulkanglTFModel::Vertex, uv)),	// Location 2: Texture coordinates
             vks::initializers::vertexInputAttributeDescription(0, 3, VK_FORMAT_R32G32B32_SFLOAT, offsetof(VulkanglTFModel::Vertex, color)),	// Location 3: Color
+            vks::initializers::vertexInputAttributeDescription(0, 4, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VulkanglTFModel::Vertex, tangent)),// Location 6: tangent
             // POI: Per-Vertex Joint indices and weights are passed to the vertex shader
-            vks::initializers::vertexInputAttributeDescription(0, 4, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VulkanglTFModel::Vertex, jointIndices)),	// Location 4: inJointIndices
-            vks::initializers::vertexInputAttributeDescription(0, 5, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VulkanglTFModel::Vertex, jointWeights)),	// Location 5: inJointWeights
+            vks::initializers::vertexInputAttributeDescription(0, 5, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VulkanglTFModel::Vertex, jointIndices)),	// Location 4: inJointIndices
+            vks::initializers::vertexInputAttributeDescription(0, 6, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(VulkanglTFModel::Vertex, jointWeights)),	// Location 5: inJointWeights
 		};
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCI = vks::initializers::pipelineVertexInputStateCreateInfo();
 		vertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(vertexInputBindings.size());

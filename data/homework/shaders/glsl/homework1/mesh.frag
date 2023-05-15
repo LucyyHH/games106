@@ -11,6 +11,7 @@ layout (location = 2) in vec2 inUV;
 layout (location = 3) in vec3 inViewVec;
 layout (location = 4) in vec3 inLightVec;
 layout (location = 5) in vec3 inWorldPos;
+layout (location = 6) in vec4 inTangent;
 
 layout (set = 0, binding = 0) uniform UBOScene
 {
@@ -48,16 +49,16 @@ float G_SchlicksmithGGX(float dotNL, float dotNV, float roughness)
 }
 
 // Fresnel function ----------------------------------------------------
-vec3 F_Schlick(float cosTheta, float metallic, vec3 baseColor)
+vec3 F_Schlick(float cosTheta, float metallic, vec3 albedo)
 {
-	vec3 F0 = mix(vec3(0.04), baseColor, metallic); // * material.specular
+	vec3 F0 = mix(vec3(0.04), albedo, metallic); // * material.specular
 	vec3 F = F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 	return F;
 }
 
 // Specular BRDF composition --------------------------------------------
 
-vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughness)
+vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 albedo, float metallic, float roughness)
 {
 	// Precalculate vectors and dot products
 	vec3 H = normalize (V + L);
@@ -79,7 +80,7 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughnes
 		// G = Geometric shadowing term (Microfacets shadowing)
 		float G = G_SchlicksmithGGX(dotNL, dotNV, rroughness);
 		// F = Fresnel factor (Reflectance depending on angle of incidence)
-		vec3 F = F_Schlick(dotNV, metallic, baseColor);
+		vec3 F = F_Schlick(dotNV, metallic, albedo);
 
 		vec3 spec = D * F * G / (4.0 * dotNL * dotNV);
 
@@ -91,27 +92,26 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 baseColor, float metallic, float roughnes
 
 void main() 
 {
-	vec3 color = texture(samplerColorMap, inUV).rgb * inColor;
+	vec3 albedo = texture(samplerColorMap, inUV).rgb * inColor;
 	vec2 metalRoughness = texture(samplerMetallicRoughnessMap, inUV).rg;
 
-	//vec3 N = normalize(inNormal);
-	vec3 N = normalize(texture(samplerNormalMap, inUV).rgb);
-	vec3 V = normalize(uboScene.camPos - inWorldPos);
+	vec3 N = normalize(inNormal);
+	vec3 T = normalize(inTangent.xyz);
+	vec3 B = normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+	N = normalize(TBN * (texture(samplerNormalMap, inUV).xyz * 2.0 - vec3(1.0)));
 
+	float metallic = metalRoughness.r;
 	float roughness = metalRoughness.g;
-
-	// Add striped pattern to roughness based on vertex position
-#ifdef ROUGHNESS_PATTERN
-	roughness = max(roughness, step(fract(inWorldPos.y * 2.02), 0.5));
-#endif
 
 	// Specular contribution
 	vec3 Lo = vec3(0.0);
 	vec3 L = normalize(inLightVec);
-	Lo += BRDF(inLightVec, V, N, color, metalRoughness.r, roughness);
+	vec3 V = normalize(uboScene.camPos - inWorldPos);
+	Lo += BRDF(L, V, N, albedo, metallic, roughness);
 
 	// Combine with ambient
-	color = color * 0.02;
+	vec3 color = albedo * 0.02;
 	color += Lo;
 
 	// emissive
