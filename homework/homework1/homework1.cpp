@@ -103,9 +103,9 @@ public:
 	// A glTF material stores information in e.g. the texture that is attached to it and colors
 	struct Material {
 		glm::vec4 baseColorFactor = glm::vec4(1.0f);
-        uint32_t baseColorTextureIndex;
+        int baseColorTextureIndex;
         int normalTextureIndex;
-        uint32_t metallicRoughnessTextureIndex;
+        int metallicRoughnessTextureIndex;
         int emissiveTextureIndex;
         VkDescriptorSet descriptorSet;
 	};
@@ -1088,7 +1088,23 @@ public:
 			VkWriteDescriptorSet writeDescriptorSet = vks::initializers::writeDescriptorSet(image.descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &image.texture.descriptor);
 			vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
 		}*/
-        auto defaultTexture = new vks::Texture2D();
+        auto dim = 16;
+        const size_t bufferSize = dim * dim * 4;
+        std::vector<float> texture(bufferSize);
+        for (size_t i = 0; i < bufferSize; i++) {
+            texture[i] = 0;
+        }
+        vks::Texture2D defaultBlackTexture;
+        defaultBlackTexture.fromBuffer(texture.data(), bufferSize, VK_FORMAT_R8G8B8A8_UNORM, dim, dim, vulkanDevice, queue, VK_FILTER_NEAREST);
+        for (size_t i = 0; i < dim * dim; i++) {
+            texture[i] = 127.5;
+            texture[i + 1] = 127.5;
+            texture[i + 2] = 255;
+            texture[i + 3] = 255;
+        }
+        vks::Texture2D defaultNormalTexture;
+        defaultNormalTexture.fromBuffer(texture.data(), bufferSize, VK_FORMAT_R8G8B8A8_UNORM, dim, dim, vulkanDevice, queue, VK_FILTER_NEAREST);
+
         for (auto& material : glTFModel.materials) {
             const VkDescriptorSetAllocateInfo allocInfo = vks::initializers::descriptorSetAllocateInfo(descriptorPool, &descriptorSetLayouts.textures, 1);
             VK_CHECK_RESULT(vkAllocateDescriptorSets(device, &allocInfo, &material.descriptorSet));
@@ -1097,14 +1113,14 @@ public:
             if (material.normalTextureIndex > -1){
                 normalMap = glTFModel.images[material.normalTextureIndex].texture.descriptor;
             }else{
-                normalMap = defaultTexture->descriptor;
+                normalMap = defaultNormalTexture.descriptor;
             }
             VkDescriptorImageInfo metallicRoughnessMap = glTFModel.images[material.metallicRoughnessTextureIndex].texture.descriptor;
             VkDescriptorImageInfo emissiveMap;
             if (material.emissiveTextureIndex > -1){
                 emissiveMap = glTFModel.images[material.emissiveTextureIndex].texture.descriptor;
             }else{
-                emissiveMap = defaultTexture->descriptor;
+                emissiveMap = defaultBlackTexture.descriptor;
             }
             std::vector<VkWriteDescriptorSet> writeDescriptorSets = {
                     vks::initializers::writeDescriptorSet(material.descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &colorMap),

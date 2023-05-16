@@ -107,7 +107,7 @@ void main()
 	// Specular contribution
 	vec3 Lo = vec3(0.0);
 	vec3 L = normalize(inLightVec);
-	vec3 V = normalize(uboScene.camPos - inWorldPos);
+	vec3 V = normalize(inViewVec);
 	Lo += BRDF(L, V, N, albedo, metallic, roughness);
 
 	// Combine with ambient
